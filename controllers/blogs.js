@@ -3,23 +3,16 @@ const blogsRouter = require('express').Router();
 const { error } = require('console');
 const Blog = require('../models/blog');
 const logger = require('../utils/logger');
-const { response } = require('../app');
 const blog = require('../models/blog');
+const User = require('../models/user');
 require('express-async-errors') // elimates the need to pass next function to catch errors 
-
+const jwt = require('jsonwebtoken')
 
 //write test before implementing async await 
 
 blogsRouter.get('/', async (request, response) => {
-    // Blog
-    //     .find({})
-    //     .then(blogs => {
-    //         logger.info(blogs)
-    //         response.json(blogs)
-    //     })
-
-        //no need for try catch blocks
-        let blogs = await Blog.find({})
+   
+        let blogs = await Blog.find({}).populate('user')
         logger.info(blogs)
         response.json(blogs)
 
@@ -27,6 +20,12 @@ blogsRouter.get('/', async (request, response) => {
 
 })
 
+
+const getTokenFrom = request => {
+
+    const authorization = request.get('authorization') //use key to get value
+
+}
 
 
 blogsRouter.post('/', async (request, response) => {
@@ -36,10 +35,18 @@ blogsRouter.post('/', async (request, response) => {
 
         toAdd['likes']=0
     }
-   
+    
+    const user = await User.findById(request.body.userId)
+
+    request.body.user=user._id
+
     const blog = new Blog(toAdd)
-  
     const result=await blog.save()
+
+    user.blogs = user.blogs.concat(result._id) //add blog id to user
+
+    await user.save()
+
     response.status(201).json(result)
 })
 

@@ -9,13 +9,15 @@ const totalLikes = (blogs) => {
         return sum + item.likes
     }
 
-    return blogs.reduce(reducer, 0) //0 is optional initial value
+    return blogs.reduce(reducer, 0) //0 initial value use for empty array else error
 
 }
 
 const favoriteBlog = (blogs) => {
 
-
+    if (blogs.length === 0) {
+        return {}
+    }
     const fav_blog = blogs.reduce((prev, blog) => {
 
         if (blog.likes > prev.likes) {
@@ -58,6 +60,10 @@ const mostBlogs = (blogs) => {
 const mostLikes = (blogs) => {
     let map = new Map();
 
+    if (blogs.length === 0) {
+        return {}
+    }
+
     blogs.forEach((blog) => {
 
         if (map.has(blog.author)) {
@@ -68,6 +74,7 @@ const mostLikes = (blogs) => {
 
     })
     
+    //the index one is the likes count
     let maxEntry = [...map.entries()].reduce((prev, curr) => curr[1] > prev[1] ? curr : prev);
 
     return {
