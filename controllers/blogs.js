@@ -25,22 +25,34 @@ const getTokenFrom = request => {
 
     const authorization = request.get('authorization') //use key to get value
 
+    if (authorization && authorization.startsWith('Bearer ')) {
+        return authorization.substring('Bearer ','')
+    }
+
+    return null
 }
 
 
 blogsRouter.post('/', async (request, response) => {
     
-    const toAdd=request.body
+    const body=request.body
+
+    const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET)
+
+    if(!decodedToken || !decodedToken.id){
+        return response.status(401).json({error: 'token missing or invalid'})
+    }
+
     if(!('likes' in toAdd)){
 
         toAdd['likes']=0
     }
     
-    const user = await User.findById(request.body.userId)
+    const user = await User.findById(body.userId)
 
     request.body.user=user._id
 
-    const blog = new Blog(toAdd)
+    const blog = new Blog(body)
     const result=await blog.save()
 
     user.blogs = user.blogs.concat(result._id) //add blog id to user
@@ -98,6 +110,12 @@ blogsRouter.use((err,req,res,next) => {
         logger.error('Validation error: ' + err.message)
         res.status(400).send('Validation error: ' + err.message)
         return
+    }else if (err.name === 'JsonWebTokenError') {
+
+        return res.status(401).json({
+            error: 'invalid token'
+        }
+        )
     }
 
     if (err.message) {
