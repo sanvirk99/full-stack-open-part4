@@ -67,7 +67,9 @@ test('obtain token login route', async () => {
     const response = await api
         .post('/api/login')
         .send(testuser)
-    assert(response.status===201)
+    assert(response.status===200)
+
+
 
 
     let invalid = {
@@ -79,11 +81,27 @@ test('obtain token login route', async () => {
         .post('/api/login')
         .send(invalid)
 
-    console.log(response2, "server invalid response")
-    
+    assert(response2.status===401)
 
 
-    //use info from login to create blog
+    const blogResponse = await api
+    .post('/api/blogs')
+    .set({'Authorization': `Bearer ${response.body.token}`})
+    .send(test_blogs[0]);
+
+    assert(blogResponse.status===201)
+
+
+    const user_after = await api.get('/api/users')
+
+    const json = JSON.parse(JSON.stringify(user_after.body))
+
+    const blog = json[0].blogs[0]
+
+    assert.strictEqual(JSON.stringify(blog),JSON.stringify(blogResponse.body))
+
+
+    //query user and see if the blog is populated correctly 
 
 
 })

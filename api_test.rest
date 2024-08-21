@@ -15,3 +15,16 @@ Content-type: application/json
   "url": "Test",
   "likes": 0
 }
+
+
+###
+
+POST http://localhost:3003/api/blogs HTTP/1.1
+Content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwZjQwZjQ4ZjQ4ZjQ4ZjQ4ZjQ4ZjQ4ZiIsImlhdCI6MTYyNjIwNjYwM30.1
+
+{
+  "title": "Test",
+  "author": "Test",
+  "url": "Test"
+}
