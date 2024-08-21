@@ -22,28 +22,12 @@ blogsRouter.get('/', async (request, response) => {
 })
 
 
-const getTokenFrom = request => {
-
-    const authorization = request.headers.authorization
-
-    if(!authorization){
-        return null
-    }
-
-    if (authorization && authorization.startsWith('Bearer ')) {
-        return authorization.replace('Bearer ','')
-    }
-
-    return null
-}
-
 
 blogsRouter.post('/', async (request, response) => {
     
     const body=request.body
-   
   
-    const token = getTokenFrom(request)
+    const token = request.token
  
     const decodedToken = jwt.verify(token, process.env.SECRET)
 
