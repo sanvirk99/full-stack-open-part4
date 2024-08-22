@@ -52,7 +52,7 @@ beforeEach(async () => {
 
 
 
-test('obtain token login route, create blog and then delete the blog', async () => {
+test('create user, obtain token login route, create blog and then delete the blog', async () => {
 
     //login route
     
