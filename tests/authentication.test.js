@@ -52,7 +52,7 @@ beforeEach(async () => {
 
 
 
-test('obtain token login route', async () => {
+test('obtain token login route, create blog and then delete the blog', async () => {
 
     //login route
     
@@ -62,6 +62,7 @@ test('obtain token login route', async () => {
     //add user to database
     const postuser= await api.post('/api/users').send(testuser)
 
+  
     assert(postuser.status===201)
    
     const response = await api
@@ -101,10 +102,55 @@ test('obtain token login route', async () => {
     assert.strictEqual(JSON.stringify(blog),JSON.stringify(blogResponse.body))
 
 
-    //query user and see if the blog is populated correctly 
+    // get the user to delete the blog they created
+    blogIdDelete = blogResponse.body.id
+
+    //create anohter user who try to delete the blog but not the creator
+    const postuser2= await api.post('/api/users').send(test_users[1])
+    const tokenUser2=(await api.post('/api/login').send(test_users[1])).body.token
+
+    // const before_delete = await api.get('/api/users')
+    // console.log(JSON.parse(JSON.stringify(before_delete.body)))
+
+    const badId = '1234'
+    const badIdResponse = await 
+        api.delete(`/api/blogs/${badId}`)
+        .set({'Authorization': `Bearer ${response.body.token}`})
+        .set('Content-Type', 'application/json')
+
+    
+    assert(badIdResponse.status===400)
+
+    const unauthorized = await 
+        api.delete(`/api/blogs/${blogIdDelete}`)
+        .set({'Authorization': `Bearer ${tokenUser2}`})
+        .set('Content-Type', 'application/json')
+
+    assert(unauthorized.status===401)
+
+
+    const deleteResponse = await 
+        api.delete(`/api/blogs/${blogIdDelete}`)
+        .set({'Authorization': `Bearer ${response.body.token}`})
+        .set('Content-Type', 'application/json')
+
+    assert(deleteResponse.status===204)
+
+
+    //have to make sure user blog array does not contain the deleted blog
+
+    const user_after_delete = await api.get('/api/users')
+
+   // console.log(user_after_delete.body)
+
+    const json_after = JSON.parse(JSON.stringify(user_after_delete.body))
+
+    assert.strictEqual(json_after[0].blogs.length,0)
 
 
 })
+
+
 
 
 after( async () => {

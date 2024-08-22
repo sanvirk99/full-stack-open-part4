@@ -7,7 +7,7 @@ const loginRouter = require('./controllers/login')
 const express = require('express')
 const app = express()
 const logger = require('./utils/logger')    
-const tokenExtractor = require('./utils/middleware').tokenExtractor
+const middleware = require('./utils/middleware')
 //const cors = require('cors')
 
 
@@ -26,8 +26,8 @@ mongoose.connect(config.MONOGODB_URI)
 
 
 app.use(express.json())
-app.use(tokenExtractor)
-app.use('/api/blogs', blogsRouter)
+app.use(middleware.tokenExtractor)
+app.use('/api/blogs', middleware.userExtractor , blogsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/login', loginRouter)
 

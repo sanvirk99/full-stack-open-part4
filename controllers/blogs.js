@@ -8,6 +8,7 @@ const User = require('../models/user');
 require('express-async-errors') // elimates the need to pass next function to catch errors 
 const jwt = require('jsonwebtoken');
 const { url } = require('inspector');
+const mongoose = require('mongoose');
 
 //write test before implementing async await 
 
@@ -26,16 +27,9 @@ blogsRouter.get('/', async (request, response) => {
 blogsRouter.post('/', async (request, response) => {
     
     const body=request.body
-  
-    const token = request.token
- 
-    const decodedToken = jwt.verify(token, process.env.SECRET)
 
-    if(!decodedToken || !decodedToken.id){
-        return response.status(401).json({error: 'token missing or invalid'})
-    }
-    
-    const user = await User.findById(decodedToken.id)
+
+    const user = request.user
 
     const blogObject = {
         title: body.title,
@@ -54,25 +48,41 @@ blogsRouter.post('/', async (request, response) => {
     return response.status(201).json(result)
 })
 
-blogsRouter.delete('/:id', async (request, response) => {
 
-    const id=request.params.id;
-
-    const toDelete=await blog.findByIdAndDelete(id)
-
-    response.status(204).end()
-    
-})
 
 blogsRouter.delete('/:id', async (request,response) => {
+
+   
 
     if(!request.params.id){
         throw new Error('missing delete parameters')
     } 
 
-    await blog.findByIdAndDelete(request.params.id)
+    if (!mongoose.Types.ObjectId.isValid(request.params.id)) {
+        return response.status(400).json({ error: 'invalid blog id' });
+    }
 
-    response.status(204).end()
+    const blog = await Blog.findById(request.params.id)
+
+    if(!blog){
+        return response.status(404).json({error: 'blog not found'})
+    }
+
+  
+    const user = request.user
+
+    if(blog.user.toString() !== user._id.toString()){
+        return response.status(401).json({error: 'unauthorized to delete blog'})
+    }
+
+    //user is authorized to delete blog
+    const success=await Blog.findByIdAndDelete(request.params.id)
+
+    if(success){
+        return response.status(204).end()
+    }else{
+        return response.status(404).json({error: 'blog not deleted'})
+    }
     
     
 })
