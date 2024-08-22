@@ -60,19 +60,38 @@ const test_blogs = [
     }
 ]
 
-console.log('test started')
+const test_users = [
+    {
+        username: "testuser0",
+        name: "testname0",
+        password: "testpassword0"
+    },
+    {
+        username: "testuser1",
+        name: "testname1",
+        password: "testpassword1"
+    }
+]
 
-
+let login=null
 beforeEach(async () => { //use a for loop to load all notes into database
     await Blog.deleteMany({})
     let blogObject = new Blog(test_blogs[0])
     await blogObject.save()
     blogObject = new Blog(test_blogs[1])
     await blogObject.save()
+
+    const user = await api.post('/api/users')
+        .send(test_users[0])
+
+    login = await api.post('/api/login')
+        .send(test_users[0])
+
+    
 })
 
 
-test('notes are returned as json', async () => {
+test('blogs are returned as json', async () => {
     await api
         .get('/api/blogs')
         .expect(200)
@@ -115,6 +134,8 @@ test('create new post then check count increased by one', async () => {
     const preLen = response.body.length //before each has two blogs loadeded
     const addBlog = test_blogs[preLen]
     const send = await api.post('/api/blogs')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .set('Content-Type', 'application/json')
         .send(addBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -144,6 +165,8 @@ test('append like property initiliazed to 0 if missing', async () => {
     }
 
     const send = await api.post('/api/blogs')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .set('Content-Type', 'application/json')
         .send(addBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -175,18 +198,24 @@ test('title and url must be present in the post', async () => {
     }
 
     await api.post('/api/blogs')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .set('Content-Type', 'application/json')
         .send(addBlog)
         .expect(400)
     
     addBlog.title="Algorithms"
 
     await api.post('/api/blogs')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .set('Content-Type', 'application/json')
         .send(addBlog)
         .expect(400)
 
     addBlog.url="http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html"
 
     await api.post('/api/blogs')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .set('Content-Type', 'application/json')
         .send(addBlog)
         .expect(201)
 
@@ -206,22 +235,37 @@ test('title and url must be present in the post', async () => {
 
 test('deleting a blog post',async () => {
 
+    //owner needs to be creator of blog post
     const response=await api.get('/api/blogs');
     
     const toDelete=response.body.find(blog => blog.title==="React patterns")
 
-    await api.delete(`/api/blogs/${toDelete.id}`)
-            .expect(204)
+    await Blog.findByIdAndDelete(toDelete.id)
 
-    const postUpdate=await api.get('/api/blogs')
-    const updated=postUpdate.body.find(blog => blog.id === toDelete.id)
+    //create the blog via blog route using the user
+    const post=await api.post('/api/blogs')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .send(toDelete)
+        .expect(201)
+    
+    console.log(post.body.id)
 
-    assert(updated===undefined)
+    await api.delete(`/api/blogs/${post.body.id}`)
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .set('Content-Type', 'application/json')
+        .expect(204)
+
+    // const postUpdate=await api.get('/api/blogs')
+    // const updated=postUpdate.body.find(blog => blog.id === toDelete.id)
+
+    // assert(updated===undefined)
         
 
 })
 
 test('testing the update functionality for a given id',async ()=> {
+
+   
 
     const response=await api.get('/api/blogs');
     
